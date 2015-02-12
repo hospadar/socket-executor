@@ -18,10 +18,27 @@ angular.module("socketExecutor", [
         },
         send: function(message){
             stream.send(angular.toJson(message))
+        },
+        reconnect: function(){
+            stream.close(true)
+            stream = $websocket("ws://" + location.host + "/websocket");
         }
-    }
-})
-.controller("socketExecutor", function($scope, socket){
-    $scope.stream = socket;
+        
+    };
     
+    return methods;
+})
+.controller("socketExecutor", function($scope, socket, $interval){
+    $scope.stream = socket;
+    $scope.socketState = $scope.stream.readyState();
+    $scope.messages = $scope.stream.messages;
+    
+    //Check socket status every 500ms, if it's not open or changing state, try to reconnect
+    $interval(function(){
+        $scope.socketState = $scope.stream.readyState();
+        if ($scope.socketState == 3 || $scope.socketState == 4){
+            $scope.stream.reconnect();
+        }
+    },
+    500);
 })

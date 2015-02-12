@@ -78,6 +78,11 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
 class Redirector(tornado.web.RequestHandler):
     def get(self):
         self.redirect("/static/index.html")
+        
+class CachelessStaticFileHandler(tornado.web.StaticFileHandler):
+    def set_extra_headers(self, path):
+        # Disable cache
+        self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
 
 def start_server(port=0, command=None, terminate_on_completion=False):
     static_path = os.path.join(os.path.dirname(__file__), "static")
@@ -85,9 +90,9 @@ def start_server(port=0, command=None, terminate_on_completion=False):
     
     application =  tornado.web.Application([
         (r'/', Redirector),
-        (r'/static.*', tornado.web.StaticFileHandler, {"path":static_path}),
+        (r'/static.*', CachelessStaticFileHandler, {"path":static_path}),
         (r'/websocket', EchoWebSocket)
-    ], static_path=static_path)
+    ], static_path=static_path, autoreload=True)
     
     application.listen(8888)
     application.proc = None
