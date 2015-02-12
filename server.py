@@ -74,9 +74,17 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
         listeners.remove(self)
         print("WebSocket closed")
 
+
+class Redirector(tornado.web.RequestHandler):
+    def get(self):
+        self.redirect("/static/index.html")
+
 def start_server(port=0, command=None, terminate_on_completion=False):
     static_path = os.path.join(os.path.dirname(__file__), "static")
+    
+    
     application =  tornado.web.Application([
+        (r'/', Redirector),
         (r'/static.*', tornado.web.StaticFileHandler, {"path":static_path}),
         (r'/websocket', EchoWebSocket)
     ], static_path=static_path)
@@ -87,4 +95,4 @@ def start_server(port=0, command=None, terminate_on_completion=False):
     tornado.ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":
-    start_server
+    start_server(port=8888)
