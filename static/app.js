@@ -2,7 +2,7 @@ angular.module("socketExecutor", [
     "ui.bootstrap",
     "ngWebSocket"])
 .factory("socket", function($websocket){
-    var stream = $websocket("ws://" + location.hostname + "/websocket");
+    var stream = $websocket("ws://" + location.host + "/websocket");
     
     var messages = [];
     
