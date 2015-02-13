@@ -151,7 +151,6 @@ def start_server(port=0, command=None, terminate_on_completion=False, autoreload
     application.listen(8888)
     application.proc = None
     print("starting webserver")
-    import pdb
     
     tornado.ioloop.IOLoop.instance().start()
 

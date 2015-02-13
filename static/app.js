@@ -72,6 +72,10 @@ angular.module("socketExecutor", [
     $scope.selectedDirective="status";
     $scope.command = "";
     
+    $scope.roundOne = false;
+    $scope.roundTwo = false;
+    
+    
     //Check socket status every 500ms, if it's not open or changing state, try to reconnect
     $interval(function(){
         $scope.socketState = $scope.stream.readyState();
@@ -88,11 +92,13 @@ angular.module("socketExecutor", [
         });
     }, 5000)
     
-    $scope.sendCommand = function(){
+    $scope.terminate = function(){
         
         $scope.stream.send({
-            directive: $scope.selectedDirective
+            directive: "terminate"
         });
+        $scope.roundOne = false;
+        $scope.roundTwo = false;
         
     }
 })

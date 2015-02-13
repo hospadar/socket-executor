@@ -53,15 +53,22 @@
             </table>
         </div>
         <div class="row">
-            <form ng-submit="sendCommand()">
-                <div class="col-xs-12 col-sm-3">
-                    <select class="form-control" ng-model="selectedDirective" ng-options="key for key in directives"> </select>
-                </div>
-                <div class="col-xs-12 col-sm-3">
-                    <input type="submit" value="Send" class="form-control">
-                </div>
-                
-            </form>
+            
+            <div class="col-xs-12 col-sm-3 text-center">
+                <button type="button" ng-class="stream.running() && (stream.readyState() == 1) ? 'foo' : 'disabled'" class="btn btn-primary" ng-model="roundOne" btn-checkbox btn-checkbox-true="1" btn-checkbox-false="0">
+                    Terminate Remote Process
+                </button>
+            </div>
+            <div class="col-xs-12 col-sm-3 text-center" ng-class="roundOne && stream.running() && (stream.readyState() == 1) ? 'foo' : 'hidden'">
+                <button type="button" class="btn btn-primary" ng-model="roundTwo" btn-checkbox btn-checkbox-true="1" btn-checkbox-false="0">
+                    Are you sure?
+                </button>
+            </div>
+            <div class="col-xs-12 col-sm-3 text-center" ng-class="roundTwo && roundOne && stream.running() && (stream.readyState() == 1) ? 'foo' : 'hidden'">
+                <button ng-click="terminate()" type="button" class="btn btn-primary" btn-checkbox btn-checkbox-true="1" btn-checkbox-false="0">
+                    Ok, click me.
+                </button>
+            </div>
         </div>
     </div>
   </div>
