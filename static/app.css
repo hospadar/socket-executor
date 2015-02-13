@@ -1,0 +1,38 @@
+.console {
+    border-radius: 6px 6px 6px 6px;
+    -moz-border-radius: 6px 6px 6px 6px;
+    -webkit-border-radius: 6px 6px 6px 6px;
+    border: 2px solid lightgray;
+    margin: 1em;
+    overflow-y: auto;
+}
+
+.message-box {
+    height:6em;
+}
+
+
+.index {
+    background: lightgrey;
+}
+
+.console td{
+    padding: 0 .5em;
+}
+
+.message-box {
+    height: 6em;
+}
+
+body, html, .full-height {
+    height: 90%;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

@@ -6,19 +6,64 @@
   <title>Executor</title>
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="bower_components/bootstrap-css-only/css/bootstrap.min.css">
+    
   <script src="bower_components/angular/angular.js"></script>
   <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
   <script src="bower_components/angular-websocket/angular-websocket.js"></script>
+  <script src="bower_components/angular-scroll-glue/src/scrollglue.js"></script>
   <script src="app.js"></script>
   
 </head>
 <body>
 
-  <div ng-controller="socketExecutor">
-    <div class="container-fluid">
-        <div class="row"><div class="xs-12">Socket State: {{stream.readyState()}}</div></div>
+  <div ng-controller="socketExecutor" class="full-height">
+    <div class="container-fluid full-height">
+        <div class="row"><div class="col-xs-12">Socket State: {{stream.readyState()}}</div></div>
+        <div class="row console full-height" scroll-glue>
+            <div class="col-xs-12">
+                <table>
+                    <tr ng-repeat="log in logs">
+                        <td class="noselect index">{{log.index}}</td>
+                        <td class="noselect">{{log.stream}}</td>
+                        <td>{{log.msg}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="row console message-box" scroll-glue>
+            <table >
+                <thead>
+                    <tr>
+                        <td>#</td>
+                        <td>type</td>
+                        <td>val</td>
+                        <td>message</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="message in messages" >
+                        <td class="index">{{message.index}}</td>
+                        <td>{{message.type}}</td>
+                        <td>{{message.value}}</td>
+                        <td>{{message.msg}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="row">
+            <form ng-submit="sendCommand()">
+                <div class="col-xs-12 col-sm-2">
+                    <select class="form-control" ng-model="selectedDirective" ng-options="key for key in directives"> </select>
+                </div>
+                <div class="col-xs-12 col-sm-1">
+                    <input type="submit" value="Send" class="form-control">
+                </div>
+                
+            </form>
+        </div>
     </div>
   </div>
 
