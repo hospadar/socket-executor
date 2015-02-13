@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from tornado import gen
-import json, re, os
+import json, re, os, sys
 import tornado.netutil
 import tornado.httpserver
 import tornado.websocket
@@ -29,8 +29,18 @@ def send_output(application, key, stream_name, out):
             to_print += line
             if len(to_print) > 0 and to_print[-1] == "\n":
                 print("sending: " + to_print.strip())
-                for listener in application.socket_listeners.get(key, []):
-                    listener.write_message(json.dumps({"type":"output", "stream":stream_name, "msg":str(to_print.strip())}))
+                to_remove = []
+                for listener in application.socket_listeners.get(key, set()):
+                    try:
+                        listener.write_message(json.dumps({"type":"output", "stream":stream_name, "msg":str(to_print.strip())}))
+                    except tornado.websocket.WebSocketClosedError:
+                        to_remove.append(listener)
+                for listener in to_remove:
+                    try:
+                        application.socket_listeners.get(key, set()).remove(listener)
+                        print("removed dead listener")
+                    except KeyError:
+                        pass
                 to_print = ""
         
         
@@ -97,9 +107,9 @@ def make_handler(key, command):
                             if self.application.sub_procs.get(self.key, None) == None:
                                 self.write_message(json.dumps({"type":"error", "msg":"Process has not been started yet, or has been terminated."}))
                             elif self.application.sub_procs[self.key].proc.poll() == None:
-                                self.write_message(json.dumps({"type":"status", "value": False, "msg":"Not finished yet"}))
+                                self.write_message(json.dumps({"type":"status", "running":True, "msg":"Not finished yet"}))
                             else:
-                                self.write_message(json.dumps({"type":"status", "value": self.application.sub_procs[self.key].proc.returncode, "msg":"Process terminated"}))
+                                self.write_message(json.dumps({"type":"status", "running":False , "msg":"Process finished with exit code: "+str(self.application.sub_procs[self.key].proc.returncode)}))
                         
                                 
                         else:
@@ -108,6 +118,7 @@ def make_handler(key, command):
                         self.write_message(json.dumps({"type":"error", "msg":"Message missing 'directive': " + str(message)}))
                 except Exception:
                     exc = traceback.format_exc()
+                    sys.stderr.write(exc + "\n")
                     self.write_message(json.dumps({"type":"error", "msg":"Failed to process command:\n"+exc}))
 
     def on_close(self):
@@ -134,7 +145,7 @@ def start_server(port=0, command=None, terminate_on_completion=False, autoreload
     application =  tornado.web.Application([
         (r'/', Redirector),
         (r'/static.*', CachelessStaticFileHandler, {"path":static_path}),
-        (r'/websocket', make_handler("my_thing", "./test_proc.py"))
+        (r'/websocket', make_handler("my_thing", "python3 test_proc.py"))
     ], static_path=static_path, autoreload=autoreload)
     
     application.listen(8888)

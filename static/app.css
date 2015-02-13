@@ -1,17 +1,24 @@
 .console {
-    border-radius: 6px 6px 6px 6px;
-    -moz-border-radius: 6px 6px 6px 6px;
-    -webkit-border-radius: 6px 6px 6px 6px;
     border: 2px solid lightgray;
     margin: 1em;
     overflow-y: auto;
+}
+
+.rounded-corners {
+    border-radius: 6px 6px 6px 6px;
+    -moz-border-radius: 6px 6px 6px 6px;
+    -webkit-border-radius: 6px 6px 6px 6px;
+    
 }
 
 .message-box {
     height:6em;
 }
 
-
+.message-item {
+    white-space: pre;
+    font-family: monospace;
+}
 .index {
     background: lightgrey;
 }
@@ -25,7 +32,25 @@
 }
 
 body, html, .full-height {
-    height: 90%;
+    height: 92%;
+}
+body {
+    padding:0 1em;
+}
+table.full-width, td.full-width  {
+    width: 100%
+}
+
+.good {
+    background: lightgreen;
+}
+
+.bad {
+    background: pink;
+}
+
+.stderr {
+    color: red;
 }
 
 .noselect {

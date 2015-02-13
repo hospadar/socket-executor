@@ -21,25 +21,25 @@
 
   <div ng-controller="socketExecutor" class="full-height">
     <div class="container-fluid full-height">
-        <div class="row"><div class="col-xs-12">Socket State: {{stream.readyState()}}</div></div>
-        <div class="row console full-height" scroll-glue>
-            <div class="col-xs-12">
-                <table>
+        <div class="row text-center ">
+            <div class="col-xs-12 col-sm-6 rounded-corners" ng-class="stream.readyState() == 1 ? 'good' : 'bad'">Socket State: {{stream.readyState()}}</div>
+            <div class="col-xs-12 col-sm-6 rounded-corners" ng-class="stream.running() && (stream.readyState() == 1) ? 'good' : 'bad'">Process State: {{stream.running() && (stream.readyState() == 1) ? "running" : "terminated/unknown"}}</div>
+        </div>
+        
+        <div class="row console rounded-corners full-height" scroll-glue>
+                <table class="full-width">
                     <tr ng-repeat="log in logs">
                         <td class="noselect index">{{log.index}}</td>
-                        <td class="noselect">{{log.stream}}</td>
-                        <td>{{log.msg}}</td>
+                        <td class="message-item full-width" ng-class="{'stderr': log.stream=='stderr'}">{{log.msg}}</td>
                     </tr>
                 </table>
-            </div>
         </div>
-        <div class="row console message-box" scroll-glue>
+        <div class="row console rounded-corners message-box" scroll-glue>
             <table >
                 <thead>
                     <tr>
                         <td>#</td>
                         <td>type</td>
-                        <td>val</td>
                         <td>message</td>
                     </tr>
                 </thead>
@@ -47,7 +47,6 @@
                     <tr ng-repeat="message in messages" >
                         <td class="index">{{message.index}}</td>
                         <td>{{message.type}}</td>
-                        <td>{{message.value}}</td>
                         <td>{{message.msg}}</td>
                     </tr>
                 </tbody>
@@ -55,10 +54,10 @@
         </div>
         <div class="row">
             <form ng-submit="sendCommand()">
-                <div class="col-xs-12 col-sm-2">
+                <div class="col-xs-12 col-sm-3">
                     <select class="form-control" ng-model="selectedDirective" ng-options="key for key in directives"> </select>
                 </div>
-                <div class="col-xs-12 col-sm-1">
+                <div class="col-xs-12 col-sm-3">
                     <input type="submit" value="Send" class="form-control">
                 </div>
                 
