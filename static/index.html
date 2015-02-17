@@ -28,7 +28,7 @@
         
         <div class="row console rounded-corners full-height" scroll-glue>
                 <table class="full-width">
-                    <tr ng-repeat="log in logs">
+                    <tr ng-repeat="log in logs | unique | orderBy: 'index'">
                         <td class="noselect index">{{log.index}}</td>
                         <td class="message-item full-width" ng-class="{'stderr': log.stream=='stderr'}">{{log.msg}}</td>
                     </tr>
@@ -44,10 +44,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr ng-repeat="message in messages" >
+                    <tr ng-repeat="message in messages | orderBy: 'index'" >
                         <td class="index">{{message.index}}</td>
                         <td>{{message.type}}</td>
-                        <td>{{message.msg}}</td>
+                        <td class="message-item">{{message.msg}}</td>
                     </tr>
                 </tbody>
             </table>
@@ -65,7 +65,7 @@
                 </button>
             </div>
             <div class="col-xs-12 col-sm-3 text-center" ng-class="roundTwo && roundOne && stream.running() && (stream.readyState() == 1) ? 'foo' : 'hidden'">
-                <button ng-click="terminate()" type="button" class="btn btn-primary" btn-checkbox btn-checkbox-true="1" btn-checkbox-false="0">
+                <button ng-click="terminate()" type="button" class="btn btn-primary" btn-checkbox btn-checkbox-true="1" btn-checkbox-false="0" ng-model="roundThree">
                     Ok, click me.
                 </button>
             </div>

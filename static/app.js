@@ -2,21 +2,57 @@ angular.module("socketExecutor", [
     "ui.bootstrap",
     "ngWebSocket",
     "luegg.directives"])
+.filter('unique', function () {
+
+  return function (items, filterOn) {
+
+    if (filterOn === false) {
+      return items;
+    }
+
+    if ((filterOn || angular.isUndefined(filterOn)) && angular.isArray(items)) {
+      var hashCheck = {}, newItems = [];
+
+      var extractValueToCompare = function (item) {
+        if (angular.isObject(item) && angular.isString(filterOn)) {
+          return item[filterOn];
+        } else {
+          return item;
+        }
+      };
+
+      angular.forEach(items, function (item) {
+        var valueToCheck, isDuplicate = false;
+
+        for (var i = 0; i < newItems.length; i++) {
+          if (angular.equals(extractValueToCompare(newItems[i]), extractValueToCompare(item))) {
+            isDuplicate = true;
+            break;
+          }
+        }
+        if (!isDuplicate) {
+          newItems.push(item);
+        }
+
+      });
+      items = newItems;
+    }
+    return items;
+  };
+})
 .factory("socket", function($websocket){
     var stream = undefined
     
     var logs = [];
     var messages = [];
-    var messageNum = 0;
-    var logNum = 0;
     var running = false;
+    
+    //set up the socket
     function init(){
         stream = $websocket("ws://" + location.host + "/websocket");
         stream.onMessage(function(message){
             var parsed = angular.fromJson(message.data);
             if (parsed['type'] == 'output'){
-                parsed["index"] = logNum;
-                logNum += 1;
                 logs.push(parsed);
                 if (logs.length > 500){
                     logs.shift();
@@ -25,8 +61,6 @@ angular.module("socketExecutor", [
                 if (parsed["type"] == "status"){
                     running=parsed["running"];
                 }
-                parsed['index']=messageNum;
-                messageNum += 1;
                 messages.push(parsed);
                 if (messages.length > 100){
                     messages.shift();
@@ -55,6 +89,9 @@ angular.module("socketExecutor", [
         reconnect: function(){
             stream.close(true)
             init()
+        },
+        history: function(){
+            stream.send(angular.toJson({directive:"history"}));
         }
         
     };
@@ -63,10 +100,11 @@ angular.module("socketExecutor", [
 })
 .controller("socketExecutor", function($scope, socket, $interval, $timeout){
     $scope.stream = socket;
+    $scope.stream.history();
     $scope.socketState = $scope.stream.readyState();
     $scope.messages = $scope.stream.messages;
     $scope.logs = $scope.stream.logs;
-    //$scope.running = $scope.stream.running;
+    
     
     $scope.directives = ["status", "terminate"];
     $scope.selectedDirective="status";
@@ -74,6 +112,7 @@ angular.module("socketExecutor", [
     
     $scope.roundOne = false;
     $scope.roundTwo = false;
+    $scope.roundThree = false;
     
     
     //Check socket status every 500ms, if it's not open or changing state, try to reconnect
