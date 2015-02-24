@@ -16,11 +16,15 @@
 }
 
 .message-item {
-    white-space: pre;
+    white-space: pre-wrap;
     font-family: monospace;
 }
 .index {
     background: lightgrey;
+    vertical-align: top;
+    text-align: right;
+    font-family: monospace;
+    border-bottom: 1px solid grey;
 }
 
 .console td{
