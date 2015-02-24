@@ -60,3 +60,6 @@ sending: 64 bytes from 216.58.216.228: icmp_seq=9 ttl=56 time=13.532 ms
 ```
 
 Then point your browser at http://localhost:8888/
+
+#### Other thoughts:
+I've really only tested this with python3 and chrome.  If you write fixes for other browsers or python2, please submit a pull request.
