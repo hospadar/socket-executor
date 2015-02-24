@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from tornado import gen
-import json, re, os, sys, socket
+import json, re, os, sys, socket, logging, time
 import tornado.netutil
 import tornado.httpserver
 import tornado.websocket
@@ -11,6 +11,13 @@ import tornado.iostream
 import traceback
 from collections import deque
 from argparse import ArgumentParser
+from socket_executor import get_static_dir
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.propagate = False
 
 '''
 var ws = new WebSocket("ws://localhost:8888/websocket")
@@ -26,20 +33,20 @@ def send_output(application, key, stream_name, history, out):
         for line in lines:
             to_print += line
             if len(to_print) > 0 and to_print[-1] == "\n":
-                print("sending: " + to_print.strip())
+                logger.debug("sending: " + to_print.strip())
                 to_remove = []
+                message = json.dumps({"type":"output", "stream":stream_name, "msg":str(to_print.strip()), "index":"{0}_{1}".format(application.start_time[key], application.out_indexes[key])})
+                application.out_indexes[key] += 1
+                application.history.setdefault(key, deque(maxlen=history)).append(message)
                 for listener in application.socket_listeners.get(key, set()):
                     try:
-                        message = json.dumps({"type":"output", "stream":stream_name, "msg":str(to_print.strip()), "index":application.out_indexes[key]})
-                        application.out_indexes[key] += 1
-                        application.history.setdefault(key, deque(maxlen=history)).append(message)
                         listener.write_message(message)
                     except tornado.websocket.WebSocketClosedError:
                         to_remove.append(listener)
                 for listener in to_remove:
                     try:
                         application.socket_listeners.get(key, set()).remove(listener)
-                        print("removed dead listener")
+                        logger.debug("removed dead listener")
                     except KeyError:
                         pass
                 to_print = ""
@@ -47,7 +54,7 @@ def send_output(application, key, stream_name, history, out):
         application.partial_lines[key][stream_name] = to_print
         
 def cleanup(application):
-    print("Stopping IOLoop")
+    logger.info("Stopping IOLoop")
     tornado.ioloop.IOLoop.current().stop()
 
 def make_handler(key, command, terminate_on_completion = False, history=1000):
@@ -67,6 +74,8 @@ def make_handler(key, command, terminate_on_completion = False, history=1000):
             if "out_indexes" not in dir(application):
                 application.out_indexes = {}
                 application.out_indexes[key] = 0
+            if "start_time" not in dir(application):
+                application.start_time = {key: time.time()}
     
             #don't start the process twice
             if key not in application.sub_procs:
@@ -103,7 +112,7 @@ def make_handler(key, command, terminate_on_completion = False, history=1000):
         def open(self):
             self.init()
             self.application.socket_listeners.setdefault(self.key, set([])).add(self)
-            print("WebSocket opened")
+            logger.debug("WebSocket opened")
     
     
         def send_status(self, ty, msg, **kwargs):
@@ -156,7 +165,7 @@ def make_handler(key, command, terminate_on_completion = False, history=1000):
     def on_close(self):
         self.init()
         self.application.socket_listeners[self.key].remove(self)
-        print("WebSocket closed")
+        logger.debug("WebSocket closed")
 
 
     return CommandWebSocket
@@ -171,35 +180,40 @@ class CachelessStaticFileHandler(tornado.web.StaticFileHandler):
         self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
 
 def start_server(command, key="default", port=0, terminate_on_completion=False, autoreload=False, history=1000):
-    static_path = os.path.join(os.path.dirname(__file__), "static")
     
     handler = make_handler("my_thing", command, terminate_on_completion=terminate_on_completion, history=history)
     application =  tornado.web.Application([
             (r'/', Redirector),
-            (r'/static.*', CachelessStaticFileHandler, {"path":static_path}),
+            (r'/static.*', CachelessStaticFileHandler, {"path":get_static_dir()}),
             (r'/websocket', handler)
-        ], static_path=static_path, autoreload=autoreload)
+        ], static_path=get_static_dir(), autoreload=autoreload)
     
     
     sockets = tornado.netutil.bind_sockets(port, '')
     server = tornado.httpserver.HTTPServer(application)
     server.add_sockets(sockets)
-    print("starting webserver on " + str(sockets[0].getsockname()[1]))
+    logger.info("starting webserver on " + str(sockets[0].getsockname()[1]))
     
     handler.start_proc(application)
     
     loop = tornado.ioloop.IOLoop.instance()
     loop.start()
-    print("closing IOLoop")
+    logger.info("Closing IOLoop")
     loop.close()
 
 if __name__ == "__main__":
     parser = ArgumentParser("Start up a process with a tornado web-socket-ey wrapper")
     parser.add_argument("-p", "--port", default=0, type=int, help="Port number to bind to, port 0 chooses a random open port")
-    parser.add_argument("-t", "--no-terminate", help="Keep the server alive after child process has terminated", action="store_true")
-    parser.add_argument("-a", "--autoreload", help="Should we autoreload the server if this script changes?", action="store_true")
-    parser.add_argument("-s", "--history", default=1000, type=int, help="Number of lines of history to store")
-    parser.add_argument("command", nargs=1, help="Command to execute.  will be run in bash")
+    parser.add_argument("--no-terminate", help="Keep the server alive after child process has terminated", action="store_true")
+    parser.add_argument("--autoreload", help="Should we autoreload the server if this script changes?", action="store_true")
+    parser.add_argument("--history", default=1000, type=int, help="Number of lines of history to store")
+    parser.add_argument("-v", "--verbose", action="store_true", help="More verbose logging")
+    parser.add_argument("command", nargs=1, help="Command to execute.  Will be run in bash, you should quote your command, otherwise only the first token will be used.")
     
+
     options = parser.parse_args()
+    
+    if options.verbose:
+        logger.setLevel(logging.DEBUG)
+        
     start_server(options.command, port=options.port, autoreload=options.autoreload, terminate_on_completion=not options.no_terminate, history=options.history)
