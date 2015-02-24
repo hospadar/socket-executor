@@ -3,6 +3,10 @@ Execute a shell command and watch it's progress Tornado backend, websocket+angul
 
 Great for tracking the progress of long-running processes on remote servers.
 
+#### Web UI
+Has a neat responsive web UI that looks like this:
+![alt img](https://raw.githubusercontent.com/hospadar/socket-executor/master/screen.png)
+
 #### Installation
 You need to 'bower install' before you install the python package, this will pull in the js and css dependencies for the web UI.  The easiest way is to simply use the install script:
 ```bash
