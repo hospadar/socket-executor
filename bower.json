@@ -10,6 +10,6 @@
     "angular-bootstrap": "0.12.x",
     "bootstrap-css-only": "3.3.x",
     "angular-websocket": "1.0.x",
-    "angular-scroll-glue": "~2.0.3",
+    "angular-scroll-glue": "~2.0.3"
   }
 }
