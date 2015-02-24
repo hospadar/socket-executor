@@ -28,7 +28,7 @@
         
         <div class="row console rounded-corners full-height" scroll-glue>
                 <table class="full-width">
-                    <tr ng-repeat="log in logs | unique | orderBy: 'index'">
+                    <tr ng-repeat="log in logs | unique | orderBy: 'sort_key'">
                         <td class="noselect index">{{log.index}}</td>
                         <td class="message-item full-width" ng-class="{'stderr': log.stream=='stderr'}">{{log.msg}}</td>
                     </tr>
@@ -44,7 +44,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr ng-repeat="message in messages | orderBy: 'index'" >
+                    <tr ng-repeat="message in messages | orderBy: 'sort_key'" >
                         <td class="index">{{message.index}}</td>
                         <td>{{message.type}}</td>
                         <td class="message-item">{{message.msg}}</td>
@@ -65,8 +65,13 @@
                 </button>
             </div>
             <div class="col-xs-12 col-sm-3 text-center" ng-class="roundTwo && roundOne && stream.running() && (stream.readyState() == 1) ? 'foo' : 'hidden'">
+                <button ng-click="interrupt()" type="button" class="btn btn-primary" btn-checkbox btn-checkbox-true="1" btn-checkbox-false="0" ng-model="roundThree">
+                    Click to interrupt (reccomended)
+                </button>
+            </div>
+            <div class="col-xs-12 col-sm-3 text-center" ng-class="roundTwo && roundOne && stream.running() && (stream.readyState() == 1) ? 'foo' : 'hidden'">
                 <button ng-click="terminate()" type="button" class="btn btn-primary" btn-checkbox btn-checkbox-true="1" btn-checkbox-false="0" ng-model="roundThree">
-                    Ok, click me.
+                    Click to kill (emergency only)
                 </button>
             </div>
         </div>

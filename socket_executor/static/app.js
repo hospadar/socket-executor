@@ -105,11 +105,6 @@ angular.module("socketExecutor", [
     $scope.messages = $scope.stream.messages;
     $scope.logs = $scope.stream.logs;
     
-    
-    $scope.directives = ["status", "terminate"];
-    $scope.selectedDirective="status";
-    $scope.command = "";
-    
     $scope.roundOne = false;
     $scope.roundTwo = false;
     $scope.roundThree = false;
@@ -131,10 +126,20 @@ angular.module("socketExecutor", [
         });
     }, 5000)
     
+    $scope.interrupt = function(){
+        
+        $scope.stream.send({
+            directive: "interrupt"
+        });
+        $scope.roundOne = false;
+        $scope.roundTwo = false;
+        
+    }
+    
     $scope.terminate = function(){
         
         $scope.stream.send({
-            directive: "terminate"
+            directive: "kill"
         });
         $scope.roundOne = false;
         $scope.roundTwo = false;

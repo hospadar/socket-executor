@@ -1,7 +1,4 @@
-try:
-    from setuptools import setup
-except:
-    from distutils.core import setup
+from setuptools import setup
 
 config = {
     'description': 'Run scripts with a websocketey wrapper to pipe out the output.',
@@ -13,8 +10,8 @@ config = {
     'install_requires': ['tornado'],
     'packages': ['socket_executor'],
     'scripts': ['socket-server.py'],
-    'package_data': {'socket-server':'static/*'},
-    'name': 'socket_executor'
+    'name': 'socket_executor',
+    'include_package_data':True
 }
 
 setup(**config)

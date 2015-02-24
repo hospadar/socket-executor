@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from tornado import gen
-import json, re, os, sys, socket, logging, time
+import json, re, os, sys, socket, logging, time, signal
 import tornado.netutil
 import tornado.httpserver
 import tornado.websocket
@@ -35,7 +35,12 @@ def send_output(application, key, stream_name, history, out):
             if len(to_print) > 0 and to_print[-1] == "\n":
                 logger.debug("sending: " + to_print.strip())
                 to_remove = []
-                message = json.dumps({"type":"output", "stream":stream_name, "msg":str(to_print.strip()), "index":"{0}_{1}".format(application.start_time[key], application.out_indexes[key])})
+                message = json.dumps({
+                    "type":"output",
+                    "stream":stream_name,
+                    "msg":str(to_print.strip()),
+                    "index": application.out_indexes[key],
+                    "sort_key":"{0}_{1:06}".format(application.start_time[key], application.out_indexes[key])})
                 application.out_indexes[key] += 1
                 application.history.setdefault(key, deque(maxlen=history)).append(message)
                 for listener in application.socket_listeners.get(key, set()):
@@ -79,7 +84,7 @@ def make_handler(key, command, terminate_on_completion = False, history=1000):
     
             #don't start the process twice
             if key not in application.sub_procs:
-                application.sub_procs[key]= tornado.process.Subprocess(["python", "test_proc.py"],
+                application.sub_procs[key]= tornado.process.Subprocess(["bash", "-c", command],
                         stdout=tornado.process.Subprocess.STREAM, stderr=tornado.process.Subprocess.STREAM, shell=False)
                 
                 #set callbacks for stdout
@@ -131,12 +136,18 @@ def make_handler(key, command, terminate_on_completion = False, history=1000):
             else:
                 try:
                     if "directive" in message:
-                        
-                        #Termination
-                        if parsed["directive"] == "terminate":
+                        #Kill
+                        if parsed["directive"] == "kill":
                             if self.application.sub_procs.get(self.key, None) != None:
-                                self.application.sub_procs[self.key].proc.terminate()
-                                self.send_status("info", "Sent SIGTERM to process")
+                                self.application.sub_procs[self.key].proc.kill()
+                                self.send_status("info", "Sent SIGKILL to process")
+                            else:
+                                self.send_status("info","Tried to kill, but process not started or already ended")
+                        #Interrupt
+                        elif parsed["directive"] == "interrupt":
+                            if self.application.sub_procs.get(self.key, None) != None:
+                                self.application.sub_procs[self.key].proc.send_signal(signal.SIGINT)
+                                self.send_status("info", "Sent SIGINT to process")
                             else:
                                 self.send_status("info","Tried to terminate, but process not started or already ended")
                         #Fetch Status
@@ -154,7 +165,7 @@ def make_handler(key, command, terminate_on_completion = False, history=1000):
                                 self.write_message(item)
                                 
                         else:
-                            self.send_status("error", "Unknown directive in message: " + str(message["command"]))
+                            self.send_status("error", "Unknown directive in message: " + str(parsed["directive"]))
                     else:
                         self.self.send_status("error", "Message missing 'directive': " + str(message))
                 except Exception:
@@ -194,12 +205,34 @@ def start_server(command, key="default", port=0, terminate_on_completion=False, 
     server.add_sockets(sockets)
     logger.info("starting webserver on " + str(sockets[0].getsockname()[1]))
     
-    handler.start_proc(application)
-    
-    loop = tornado.ioloop.IOLoop.instance()
-    loop.start()
-    logger.info("Closing IOLoop")
-    loop.close()
+    try:
+        handler.start_proc(application)
+        
+        loop = tornado.ioloop.IOLoop.instance()
+        loop.start()
+        logger.info("Closing IOLoop")
+        loop.close()
+    except:
+        if "sub_procs" in dir(application):
+            for proc in application.sub_procs.values():
+                try:
+                    logger.info("Sending SIGINT to terminate sub-proc")
+                    proc.proc.send_signal(signal.SIGINT)
+                    start = time.time()
+                    while True:
+                        if proc.proc.poll() == None and time.time() - start > 10:
+                            logger.info("Sending SIGKILL to sub-proc")
+                            break
+                        elif proc.proc.poll() != None:
+                            logger.info("Sub-proc exited with code {0}".format(proc.proc.returncode))
+                            break
+                        logger.info("Waiting for proc to terminate, status: {0}".format(proc.proc.poll()))
+                        time.sleep(1)
+                        for i in range(10):
+                            proc.proc.send_signal(signal.SIGINT)
+                        
+                except:
+                    traceback.print_exc()
 
 if __name__ == "__main__":
     parser = ArgumentParser("Start up a process with a tornado web-socket-ey wrapper")
@@ -208,7 +241,7 @@ if __name__ == "__main__":
     parser.add_argument("--autoreload", help="Should we autoreload the server if this script changes?", action="store_true")
     parser.add_argument("--history", default=1000, type=int, help="Number of lines of history to store")
     parser.add_argument("-v", "--verbose", action="store_true", help="More verbose logging")
-    parser.add_argument("command", nargs=1, help="Command to execute.  Will be run in bash, you should quote your command, otherwise only the first token will be used.")
+    parser.add_argument("command", nargs="+", help="Command to execute.  Will be run in bash, you should quote your command, otherwise only the first token will be used.")
     
 
     options = parser.parse_args()
@@ -216,4 +249,4 @@ if __name__ == "__main__":
     if options.verbose:
         logger.setLevel(logging.DEBUG)
         
-    start_server(options.command, port=options.port, autoreload=options.autoreload, terminate_on_completion=not options.no_terminate, history=options.history)
+    start_server(" ".join(options.command), port=options.port, autoreload=options.autoreload, terminate_on_completion=not options.no_terminate, history=options.history)
