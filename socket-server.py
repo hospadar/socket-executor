@@ -190,7 +190,7 @@ class CachelessStaticFileHandler(tornado.web.StaticFileHandler):
         # Disable cache
         self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
 
-def start_server(command, key="default", port=0, terminate_on_completion=False, autoreload=False, history=200):
+def start_server(command, key="default", port=0, terminate_on_completion=False, autoreload=False, history=1000):
     
     handler = make_handler("my_thing", command, terminate_on_completion=terminate_on_completion, history=history)
     application =  tornado.web.Application([

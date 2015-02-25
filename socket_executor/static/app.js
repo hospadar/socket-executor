@@ -54,7 +54,7 @@ angular.module("socketExecutor", [
             var parsed = angular.fromJson(message.data);
             if (parsed['type'] == 'output'){
                 logs.push(parsed);
-                if (logs.length > 200){
+                if (logs.length > 500){
                     logs.shift();
                 }
             } else {
