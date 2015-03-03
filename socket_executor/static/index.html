@@ -21,6 +21,7 @@
 
   <div ng-controller="socketExecutor" class="full-height">
     <div class="container-fluid full-height">
+        <div class="row"><div class="col-xs-12"><p></p></div></div>
         <div class="row text-center ">
             <div class="col-xs-12 col-sm-6 rounded-corners" ng-class="stream.readyState() == 1 ? 'good' : 'bad'">Socket State: {{stream.readyState()}}</div>
             <div class="col-xs-12 col-sm-6 rounded-corners" ng-class="stream.running() && (stream.readyState() == 1) ? 'good' : 'bad'">Process State: {{stream.running() && (stream.readyState() == 1) ? "running" : "terminated/unknown"}}</div>
