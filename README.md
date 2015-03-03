@@ -1,5 +1,6 @@
 # socket-executor
-Execute a shell command and watch it's progress Tornado backend, websocket+angular frontend.
+Execute a shell command and watch it's progress in your browser  
+Tornado backend, websocket+angular frontend.
 
 Great for tracking the progress of long-running processes on remote servers.
 
