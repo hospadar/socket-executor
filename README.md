@@ -8,6 +8,12 @@ Has a neat responsive web UI that looks like this:
 ![alt img](https://raw.githubusercontent.com/hospadar/socket-executor/master/screen.png)
 
 #### Installation
+The easest way to install is with pip:
+```bash
+pip3 install socket_executor
+```
+
+If you're hell-bent on building it yourself:  
 You'll need to get [bower](http://bower.io/) before you install the python package so that you can 'bower install', this will pull in the js and css dependencies for the web UI.  Once you have bower installed, the easiest way to install socket-executor is to simply use the install script:
 ```bash
 ./install.sh
