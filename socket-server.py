@@ -67,7 +67,7 @@ def make_handler(key, command, terminate_on_completion = False, history=1000):
     class CommandWebSocket(tornado.websocket.WebSocketHandler):
         setup = False
         
-        def start_proc(application ):
+        def start_proc(application, no_stdout, no_stderr ):
             if "sub_procs" not in dir(application):
                 application.sub_procs = {}
             if "socket_listeners" not in dir(application):
@@ -88,16 +88,27 @@ def make_handler(key, command, terminate_on_completion = False, history=1000):
                         stdout=tornado.process.Subprocess.STREAM, stderr=tornado.process.Subprocess.STREAM, shell=False)
                 
                 #set callbacks for stdout
-                application.sub_procs[key].stdout.read_until_close(
-                        callback=lambda x: send_output(application, key, "stdout", history, x),
-                            streaming_callback=lambda x: send_output(application, key, "stdout", history, x))
+                if no_stdout:
+                    application.sub_procs[key].stdout.read_until_close(
+                            callback=lambda x: None,
+                                streaming_callback=lambda x: None)
+                else:
+                    application.sub_procs[key].stdout.read_until_close(
+                            callback=lambda x: send_output(application, key, "stdout", history, x),
+                                streaming_callback=lambda x: send_output(application, key, "stdout", history, x))
                 
                 #when the stdout stream closes we can assume the process is terminated
                 if terminate_on_completion:
                     application.sub_procs[key].stdout.set_close_callback(lambda : cleanup(application))
                 
+                
                 #set callbacks for stderr
-                application.sub_procs[key].stderr.read_until_close( 
+                if no_stderr:
+                    application.sub_procs[key].stderr.read_until_close( 
+                        callback=lambda x: None,
+                           streaming_callback=lambda x: None)
+                else:
+                    application.sub_procs[key].stderr.read_until_close( 
                         callback=lambda x: send_output(application, key, "stderr", history, x),
                            streaming_callback=lambda x: send_output(application, key, "stderr", history, x))
         
@@ -190,7 +201,7 @@ class CachelessStaticFileHandler(tornado.web.StaticFileHandler):
         # Disable cache
         self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
 
-def start_server(command, key="default", port=0, terminate_on_completion=False, autoreload=False, history=1000):
+def start_server(command, key="default", port=0, terminate_on_completion=False, autoreload=False, history=1000, no_stdout=False, no_stderr=False):
     
     handler = make_handler("my_thing", command, terminate_on_completion=terminate_on_completion, history=history)
     application =  tornado.web.Application([
@@ -241,6 +252,8 @@ if __name__ == "__main__":
     parser.add_argument("--autoreload", help="Should we autoreload the server if this script changes?", action="store_true")
     parser.add_argument("--history", default=1000, type=int, help="Number of lines of history to store")
     parser.add_argument("-v", "--verbose", action="store_true", help="More verbose logging")
+    parser.add_argument("--no-stdout", action="store_true", help="don't send stdout to web")
+    parser.add_argument("--no-stderr", action="store_true", help="don't send stderr to web")
     parser.add_argument("command", nargs="+", help="Command to execute.  Will be run in bash, you should quote your command, otherwise only the first token will be used.")
     
 
@@ -249,4 +262,10 @@ if __name__ == "__main__":
     if options.verbose:
         logger.setLevel(logging.DEBUG)
         
-    start_server(" ".join(options.command), port=options.port, autoreload=options.autoreload, terminate_on_completion=not options.no_terminate, history=options.history)
+    start_server(" ".join(options.command), 
+        port=options.port, 
+        autoreload=options.autoreload, 
+        terminate_on_completion=not options.no_terminate, 
+        history=options.history, 
+        no_stdout = options.no_stdout, 
+        no_stderr = options.no_stderr)
